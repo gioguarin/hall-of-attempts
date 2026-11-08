@@ -1,8 +1,6 @@
 # Licences and attribution
 
 This file covers the seven public exhibits, their source images, and both GLB texture tiers.
-DOOM mask and Onewheel assets are excluded: the project has no recorded redistribution permission.
-Original research inputs and results remain private lab material.
 
 CC-derived textured reconstructions are distributed under the source licence identified per asset.
 This does not apply share-alike to independent gallery code. Source photographs retain their own licences.

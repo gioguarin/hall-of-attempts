@@ -13,8 +13,8 @@
 
   const el = document.getElementById('scene');
   const scene = new THREE.Scene();
-  scene.background = new THREE.Color(0x10141b);
-  scene.fog = new THREE.FogExp2(0x10141b, 0.012);
+  scene.background = new THREE.Color(0x000000);
+  scene.fog = new THREE.FogExp2(0x080a0a, 0.018);
 
   function pixelRatio() { return Math.min(devicePixelRatio || 1, innerWidth <= 760 ? 1.5 : 2); }
   const initialRect = el.getBoundingClientRect();
@@ -32,7 +32,9 @@
   renderer.setSize(initialRect.width, initialRect.height);
   renderer.outputEncoding = THREE.sRGBEncoding;
   renderer.toneMapping = THREE.ACESFilmicToneMapping;
-  renderer.toneMappingExposure = 1.2;
+  renderer.toneMappingExposure = 1.05;
+  renderer.shadowMap.enabled = true;
+  renderer.shadowMap.type = THREE.VSMShadowMap;
   el.appendChild(renderer.domElement);
 
   const hall = new THREE.Group();
@@ -56,18 +58,61 @@
   }
   // All illumination comes from the overhead oculus: a soft sky bounce and
   // broad downward key describe the same architectural light source.
-  scene.add(new THREE.HemisphereLight(0xdce9ff, 0x10121a, 0.4));
-  const skylight = new THREE.SpotLight(0xf3f1e9, 3.2, 75, 0.94, 0.65, 1);
+  scene.add(new THREE.HemisphereLight(0xc9d9e7, 0x30271d, 0.65));
+  const skylight = new THREE.SpotLight(0xffedcc, 3.8, 75, 1.02, 0.72, 1);
   skylight.position.set(0, 14, 0);
   skylight.target.position.set(0, 0, 0);
+  skylight.castShadow = true;
+  skylight.shadow.mapSize.set(innerWidth <= 760 ? 512 : 1024, innerWidth <= 760 ? 512 : 1024);
+  skylight.shadow.radius = innerWidth <= 760 ? 3 : 5;
+  skylight.shadow.blurSamples = innerWidth <= 760 ? 4 : 8;
+  skylight.shadow.bias = -0.0004;
+  skylight.shadow.normalBias = 0.035;
+  skylight.shadow.camera.near = 2;
+  skylight.shadow.camera.far = 45;
   scene.add(skylight, skylight.target);
 
-  const stone = new THREE.MeshLambertMaterial({ color: 0xd6ccba });
-  const stoneDark = new THREE.MeshLambertMaterial({ color: 0xa89d8b });
+  function stoneTexture(base, vein, seed) {
+    const c = document.createElement('canvas'); c.width = c.height = 512;
+    const x = c.getContext('2d'); x.fillStyle = base; x.fillRect(0, 0, 512, 512);
+    let n = seed;
+    const random = () => { n = (n * 1664525 + 1013904223) >>> 0; return n / 4294967296; };
+    for (let k = 0; k < 110; k++) {
+      const yy = random() * 650 - 70;
+      x.strokeStyle = vein; x.globalAlpha = 0.035 + random() * 0.06;
+      x.lineWidth = 0.4 + random() * 2.5; x.beginPath();
+      for (let px = 0; px <= 512; px += 8) {
+        const py = yy + Math.sin(px * 0.012 + k) * 16 + Math.sin(px * 0.043 + k * 2) * 3;
+        if (!px) x.moveTo(px, py); else x.lineTo(px, py);
+      }
+      x.stroke();
+    }
+    for (let k = 0; k < 1800; k++) {
+      x.globalAlpha = random() * 0.06; x.fillStyle = random() > 0.5 ? '#fff' : '#342b20';
+      x.fillRect(random() * 512, random() * 512, 1 + random() * 3, 1);
+    }
+    x.globalAlpha = 1;
+    const texture = new THREE.CanvasTexture(c); texture.encoding = THREE.sRGBEncoding;
+    texture.anisotropy = Math.min(4, renderer.capabilities.getMaxAnisotropy()); return texture;
+  }
+  const marble = stoneTexture('#c5bba5', '#6f6556', 37);
+  const travertine = stoneTexture('#8a806c', '#3f382c', 93);
+  const stone = new THREE.MeshStandardMaterial({ map: marble, roughness: 0.68, metalness: 0.03 });
+  const stoneDark = new THREE.MeshStandardMaterial({ color: 0xa69a83, map: marble, roughness: 0.6 });
   const G = {
     base: new THREE.BoxGeometry(1.62, 0.26, 1.62),
     plinth: new THREE.BoxGeometry(1.34, 0.16, 1.34),
-    shaft: new THREE.CylinderGeometry(0.5, 0.56, 1.95, 24, 1),
+    shaft: (() => {
+      const geo = new THREE.CylinderGeometry(0.48, 0.55, 1.95, 80, 8);
+      const pos = geo.attributes.position;
+      for (let i = 0; i < pos.count; i++) {
+        const x = pos.getX(i), z = pos.getZ(i), r = Math.hypot(x, z);
+        if (!r) continue;
+        const flute = 0.025 * (1 + Math.cos(Math.atan2(z, x) * 20)) / 2;
+        const rr = r - flute; pos.setXYZ(i, x * rr / r, pos.getY(i), z * rr / r);
+      }
+      geo.computeVertexNormals(); return geo;
+    })(),
     collar: new THREE.TorusGeometry(0.5, 0.05, 8, 24),
     cap: new THREE.BoxGeometry(1.2, 0.16, 1.2),
     abacus: new THREE.BoxGeometry(1.4, 0.1, 1.4),
@@ -79,6 +124,7 @@
     const put = (geo, mat, y) => {
       const m = new THREE.Mesh(geo, mat);
       m.position.y = y;
+      m.castShadow = true; m.receiveShadow = true;
       g.add(m);
       return m;
     };
@@ -107,30 +153,84 @@
     return t;
   })();
 
+  // One light-weight particle field catches the skylight; it stays fixed in the room.
+  const dustCount = innerWidth <= 760 ? 420 : 1100;
+  const dustPositions = new Float32Array(dustCount * 3);
+  const dustOrigins = new Float32Array(dustCount * 3);
+  const dustColors = new Float32Array(dustCount * 3);
+  let dustSeed = 719;
+  const dustRandom = () => { dustSeed = (dustSeed * 1664525 + 1013904223) >>> 0; return dustSeed / 4294967296; };
+  for (let i = 0; i < dustCount; i++) {
+    const angle = dustRandom() * Math.PI * 2;
+    const radius = Math.sqrt(dustRandom()) * 13;
+    dustOrigins[i * 3] = Math.cos(angle) * radius;
+    dustOrigins[i * 3 + 1] = 0.5 + dustRandom() * 12;
+    dustOrigins[i * 3 + 2] = Math.sin(angle) * radius;
+    const brightness = (0.4 + dustRandom() * 0.6) * (1 - radius / 21);
+    dustColors.set([brightness, brightness * 0.91, brightness * 0.74], i * 3);
+  }
+  dustPositions.set(dustOrigins);
+  const dustGeometry = new THREE.BufferGeometry();
+  dustGeometry.setAttribute('position', new THREE.BufferAttribute(dustPositions, 3).setUsage(THREE.DynamicDrawUsage));
+  dustGeometry.setAttribute('color', new THREE.BufferAttribute(dustColors, 3));
+  const dust = new THREE.Points(dustGeometry, new THREE.PointsMaterial({
+    map: poolTex, vertexColors: true, transparent: true, opacity: 0.82, size: 0.065,
+    sizeAttenuation: true, depthWrite: false, blending: THREE.AdditiveBlending,
+  }));
+  dust.frustumCulled = false;
+  scene.add(dust);
+  let dustTime = 0;
+  function driftDust(dt) {
+    dustTime += dt;
+    for (let i = 0; i < dustCount; i++) {
+      const phase = i * 2.39996;
+      dustPositions[i * 3] = dustOrigins[i * 3] + Math.sin(dustTime * 0.12 + phase) * 0.18;
+      dustPositions[i * 3 + 1] = 0.5 + ((dustOrigins[i * 3 + 1] - 0.5 + dustTime * 0.025) % 12);
+      dustPositions[i * 3 + 2] = dustOrigins[i * 3 + 2] + Math.cos(dustTime * 0.09 + phase) * 0.14;
+    }
+    dustGeometry.attributes.position.needsUpdate = true;
+  }
+
   // A fixed architectural shell surrounds the rotating exhibition ring.
   const architecture = new THREE.Group();
   scene.add(architecture);
-  const limestone = new THREE.MeshLambertMaterial({ color: 0x484b4a });
-  const trim = new THREE.MeshLambertMaterial({ color: 0x7d776a });
-  const recess = new THREE.MeshBasicMaterial({ color: 0x151a22, side: THREE.DoubleSide });
+  const limestone = new THREE.MeshStandardMaterial({ color: 0x8d8069, map: travertine, roughness: 0.92 });
+  const trim = new THREE.MeshStandardMaterial({ color: 0xb2a080, map: travertine, roughness: 0.8 });
+  const recess = new THREE.MeshBasicMaterial({ color: 0x000000, fog: false, toneMapped: false, side: THREE.DoubleSide });
   const floorCanvas = document.createElement('canvas');
-  floorCanvas.width = floorCanvas.height = 512;
+  floorCanvas.width = floorCanvas.height = 1024;
   const fx = floorCanvas.getContext('2d');
-  fx.fillStyle = '#23282a'; fx.fillRect(0, 0, 512, 512);
-  // Large offset stone slabs give scale without adding geometry or network textures.
-  for (let row = 0; row < 8; row++) for (let col = -1; col < 8; col++) {
-    const shade = 33 + ((row * 17 + col * 11 + 44) % 8);
-    fx.fillStyle = `rgb(${shade},${shade + 3},${shade + 1})`;
-    fx.fillRect(col * 64 + (row % 2) * 32 + 1, row * 64 + 1, 62, 62);
+  fx.fillStyle = '#36332d'; fx.fillRect(0, 0, 1024, 1024);
+  function floorSector(r0, r1, a0, a1, color) {
+    fx.beginPath(); fx.arc(512, 512, r1, a0, a1);
+    fx.arc(512, 512, r0, a1, a0, true); fx.closePath(); fx.fillStyle = color; fx.fill();
+  }
+  for (let band = 0; band < 12; band++) for (let i = 0; i < 48; i++) {
+    const offset = (band % 2) * Math.PI / 48;
+    floorSector(band * 44 + 1, (band + 1) * 44 - 1,
+      i * Math.PI / 24 + offset + 0.001, (i + 1) * Math.PI / 24 + offset - 0.001,
+      ['#3e3c34', '#444037', '#393b35', '#4a453b'][(i * 7 + band * 3) % 4]);
+  }
+  // An inlaid marble compass rose anchors the circular exhibition.
+  fx.beginPath(); fx.arc(512, 512, 182, 0, Math.PI * 2); fx.fillStyle = '#252e2c'; fx.fill();
+  for (let i = 0; i < 16; i++) {
+    const a = i * Math.PI / 8, r = i % 2 ? 80 : 153;
+    fx.beginPath(); fx.moveTo(512, 512);
+    fx.lineTo(512 + Math.cos(a - 0.09) * 40, 512 + Math.sin(a - 0.09) * 40);
+    fx.lineTo(512 + Math.cos(a) * r, 512 + Math.sin(a) * r);
+    fx.lineTo(512 + Math.cos(a + 0.09) * 40, 512 + Math.sin(a + 0.09) * 40);
+    fx.closePath(); fx.fillStyle = i % 2 ? '#81765c' : '#b3a487'; fx.fill();
+  }
+  for (const radius of [32, 177, 182, 195, 320, 480]) {
+    fx.beginPath(); fx.arc(512, 512, radius, 0, Math.PI * 2);
+    fx.strokeStyle = radius === 182 ? '#b0a07e' : '#6f6551'; fx.lineWidth = radius === 182 ? 4 : 1; fx.stroke();
   }
   const floorMap = new THREE.CanvasTexture(floorCanvas);
   floorMap.encoding = THREE.sRGBEncoding;
-  floorMap.wrapS = floorMap.wrapT = THREE.RepeatWrapping;
-  floorMap.repeat.set(4, 4);
   floorMap.anisotropy = Math.min(4, renderer.capabilities.getMaxAnisotropy());
-  const floor = new THREE.Mesh(new THREE.CircleGeometry(32, 96),
-    new THREE.MeshLambertMaterial({ color: 0xaaaaa2, map: floorMap }));
-  floor.rotation.x = -Math.PI / 2;
+  const floor = new THREE.Mesh(new THREE.CircleGeometry(32, 128),
+    new THREE.MeshStandardMaterial({ map: floorMap, roughness: 0.62, metalness: 0.08 }));
+  floor.rotation.x = -Math.PI / 2; floor.receiveShadow = true;
   architecture.add(floor);
 
   function horizontalRing(radius, tube, y, material) {
@@ -139,10 +239,10 @@
     architecture.add(mesh);
     return mesh;
   }
-  const brass = new THREE.MeshLambertMaterial({ color: 0x9e8960 });
-  for (const radius of [6.5, 8.6, 11, 24]) horizontalRing(radius, 0.025, 0.018, brass);
+  const brass = new THREE.MeshStandardMaterial({ color: 0x8f7950, metalness: 0.65, roughness: 0.4 });
+  for (const radius of [6.2, 11.4]) horizontalRing(radius, 0.014, 0.018, brass);
   const wall = new THREE.Mesh(new THREE.CylinderGeometry(31, 31, 14, 64, 1, true),
-    new THREE.MeshLambertMaterial({ color: 0x34393c, side: THREE.BackSide }));
+    new THREE.MeshStandardMaterial({ color: 0x756b58, map: travertine, roughness: 0.95, side: THREE.BackSide }));
   wall.position.y = 7; architecture.add(wall);
   for (const y of [0.25, 10.6, 11.2, 13.5]) horizontalRing(30.6, y === 0.25 ? 0.3 : 0.18, y, trim);
 
@@ -155,8 +255,15 @@
   archShape.moveTo(-1.75, 0); archShape.lineTo(-1.75, 5.6);
   archShape.absarc(0, 5.6, 1.75, Math.PI, 0, true);
   archShape.lineTo(1.75, 0); archShape.closePath();
-  const archGeometry = new THREE.ShapeGeometry(archShape, 16);
-  const archFrames = new THREE.InstancedMesh(archGeometry, trim, count);
+  const archGeometry = new THREE.ShapeGeometry(archShape, 20);
+  const frameShape = archShape.clone();
+  const opening = new THREE.Path();
+  opening.moveTo(-1.48, 0.2); opening.lineTo(1.48, 0.2); opening.lineTo(1.48, 5.6);
+  opening.absarc(0, 5.6, 1.48, 0, Math.PI, false); opening.lineTo(-1.48, 0.2);
+  frameShape.holes.push(opening);
+  const frameGeometry = new THREE.ExtrudeGeometry(frameShape, { depth: 0.72, bevelEnabled: true,
+    bevelThickness: 0.06, bevelSize: 0.05, bevelSegments: 1, steps: 1, curveSegments: 20 });
+  const archFrames = new THREE.InstancedMesh(frameGeometry, trim, count);
   const archVoids = new THREE.InstancedMesh(archGeometry, recess, count);
   const transform = new THREE.Object3D();
   for (let i = 0; i < count; i++) {
@@ -177,24 +284,40 @@
   }
   architecture.add(piers, capitals, archFrames, archVoids);
 
-  // A coffered annular ceiling opens onto one broad sky-lit oculus.
-  const ceiling = new THREE.Mesh(new THREE.RingGeometry(7, 31, 64),
-    new THREE.MeshLambertMaterial({ color: 0x6d716d, side: THREE.DoubleSide }));
-  ceiling.rotation.x = Math.PI / 2; ceiling.position.y = 14;
-  architecture.add(ceiling);
-  for (const radius of [7, 12, 20, 29]) horizontalRing(radius, 0.16, 13.8, trim);
-  const sky = new THREE.Mesh(new THREE.CircleGeometry(7, 64),
-    new THREE.MeshBasicMaterial({ color: 0xdce9f4, side: THREE.DoubleSide }));
-  sky.rotation.x = Math.PI / 2; sky.position.y = 14.1;
-  architecture.add(sky);
-  const roofRibs = new THREE.InstancedMesh(new THREE.BoxGeometry(0.12, 0.2, 23), trim, count);
-  for (let i = 0; i < count; i++) {
-    const a = i / count * Math.PI * 2;
-    transform.position.set(Math.cos(a) * 18.5, 13.7, Math.sin(a) * 18.5);
-    transform.rotation.set(0, Math.PI / 2 - a, 0); transform.scale.set(1, 1, 1); transform.updateMatrix();
-    roofRibs.setMatrixAt(i, transform.matrix);
+  // A shallow masonry dome, with recessed coffers, leads into the oculus.
+  const domeHeight = r => 10.5 + Math.sqrt(Math.max(0, 31 * 31 - r * r)) * 0.12;
+  const dome = new THREE.Mesh(new THREE.SphereGeometry(31, 80, 24, 0, Math.PI * 2,
+    Math.asin(7 / 31), Math.PI / 2 - Math.asin(7 / 31)),
+    new THREE.MeshStandardMaterial({ color: 0x70634f, map: travertine, side: THREE.BackSide, roughness: 1 }));
+  dome.scale.y = 0.12; dome.position.y = 10.5; architecture.add(dome);
+  for (const radius of [7, 7.35, 12, 20, 29]) horizontalRing(radius, radius < 8 ? 0.14 : 0.07, domeHeight(radius) - 0.1, trim);
+  const positions = [], colors = [];
+  for (let band = 0; band < 4; band++) for (let i = 0; i < count; i++) {
+    const rings = [7.7, 12, 20, 27, 30];
+    const r0 = rings[band] + 0.17, r1 = rings[band + 1] - 0.17;
+    const a0 = i / count * Math.PI * 2 + 0.014, a1 = (i + 1) / count * Math.PI * 2 - 0.014;
+    function point(r, a) { return [Math.cos(a) * r, domeHeight(r) - 0.045, Math.sin(a) * r]; }
+    for (let r = 0; r < 3; r++) for (let t = 0; t < 3; t++) {
+      const rr0 = r0 + (r1 - r0) * r / 3, rr1 = r0 + (r1 - r0) * (r + 1) / 3;
+      const aa0 = a0 + (a1 - a0) * t / 3, aa1 = a0 + (a1 - a0) * (t + 1) / 3;
+      const pts = [point(rr0, aa0), point(rr1, aa0), point(rr1, aa1), point(rr0, aa0), point(rr1, aa1), point(rr0, aa1)];
+      for (const pt of pts) { positions.push(...pt); const shade = 0.19 + band * 0.025; colors.push(shade, shade * 0.9, shade * 0.73); }
+    }
   }
-  architecture.add(roofRibs);
+  const coffers = new THREE.BufferGeometry();
+  coffers.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+  coffers.setAttribute('color', new THREE.Float32BufferAttribute(colors, 3)); coffers.computeVertexNormals();
+  architecture.add(new THREE.Mesh(coffers, new THREE.MeshStandardMaterial({ vertexColors: true, side: THREE.DoubleSide, roughness: 1 })));
+  const skyCanvas = document.createElement('canvas'); skyCanvas.width = skyCanvas.height = 256;
+  const skyContext = skyCanvas.getContext('2d');
+  const skyGradient = skyContext.createRadialGradient(130, 100, 5, 128, 128, 160);
+  skyGradient.addColorStop(0, '#fff9e5'); skyGradient.addColorStop(0.6, '#d8e5e9'); skyGradient.addColorStop(1, '#8aafc8');
+  skyContext.fillStyle = skyGradient; skyContext.fillRect(0, 0, 256, 256);
+  const skyTexture = new THREE.CanvasTexture(skyCanvas); skyTexture.encoding = THREE.sRGBEncoding;
+  const sky = new THREE.Mesh(new THREE.CircleGeometry(7, 80),
+    new THREE.MeshBasicMaterial({ map: skyTexture, side: THREE.DoubleSide, toneMapped: false }));
+  sky.rotation.x = Math.PI / 2; sky.position.y = domeHeight(7) + 0.2; architecture.add(sky);
+
   // A soft contact pool beneath the exhibition suggests the skylight's footprint.
   const skyPool = new THREE.Mesh(new THREE.PlaneGeometry(30, 30),
     new THREE.MeshBasicMaterial({ map: poolTex, color: 0xb8c7d5, transparent: true,
@@ -253,6 +376,8 @@
   let tweenRaf = null;
   let turnRaf = null;
   let renderRaf = null;
+  let pedestalRaf = null;
+  let pedestalMode = 'outward';
 
   function overviewFrame() {
     const radius = Math.max(25, 10.5 / (Math.tan(camera.fov * Math.PI / 360) * camera.aspect));
@@ -261,12 +386,11 @@
 
   function frameFor(i) {
     const a = items[i].a - hallSpin;
-    // Fit the whole podium into the actual canvas, including narrow screens.
-    const distance = Math.max(8, 3.1 / Math.tan(camera.fov * Math.PI / 360),
-      1.7 / (Math.tan(camera.fov * Math.PI / 360) * camera.aspect));
+    // Focus gives the object and its plaque priority; the upper column stays in view.
+    const distance = Math.max(4.8, 1.15 / (Math.tan(camera.fov * Math.PI / 360) * camera.aspect));
     const r = 8.6 - distance;
-    return { position: new THREE.Vector3(Math.cos(a) * r, 3.2, Math.sin(a) * r),
-      target: new THREE.Vector3(Math.cos(a) * 8.6, 2.5, Math.sin(a) * 8.6) };
+    return { position: new THREE.Vector3(Math.cos(a) * r, 3.8, Math.sin(a) * r),
+      target: new THREE.Vector3(Math.cos(a) * 8.6, items[i].topY + 0.7, Math.sin(a) * 8.6) };
   }
 
   function place(f) {
@@ -302,10 +426,37 @@
     tweenRaf = requestAnimationFrame(step);
   }
 
-  function setTentDir(it, dir) {
-    const off = 0.58 * dir;
-    it.tent.position.set(it.x + Math.cos(it.a) * off, it.topY + 0.02, it.z + Math.sin(it.a) * off);
-    it.tent.rotation.y = Math.PI / 2 - it.a + (dir < 0 ? Math.PI : 0);
+  const CARD_TILT = 0.18;
+  const CARD_TOP = 0.3 + 0.3 * Math.cos(CARD_TILT);
+  // The upper edge meets the 1.4-wide abacus rim; the label hangs below it.
+  const CARD_OFFSET = 0.7 + 0.008 - (0.18 - 0.3 * Math.sin(CARD_TILT));
+  function orientPedestals(inward, immediate = false) {
+    const mode = inward ? 'inward' : 'outward';
+    if (mode === pedestalMode && !immediate) return;
+    pedestalMode = mode;
+    if (pedestalRaf !== null) cancelAnimationFrame(pedestalRaf);
+    pedestalRaf = null;
+    const turns = items.map(it => {
+      const from = it.stand.rotation.y;
+      const goal = Math.PI / 2 - it.a + (inward ? Math.PI : 0);
+      // Always turn in the same direction, including an interrupted mode change.
+      let delta = ((goal - from) % (Math.PI * 2) + Math.PI * 2) % (Math.PI * 2);
+      if (delta > Math.PI * 2 - 1e-8) delta = 0;
+      return { stand: it.stand, from, delta };
+    });
+    if (REDUCE || immediate) {
+      for (const turn of turns) turn.stand.rotation.y = turn.from + turn.delta;
+      render(); return;
+    }
+    const start = performance.now();
+    function step(now) {
+      const t = Math.min(1, (now - start) / 650);
+      const eased = t * t * (3 - 2 * t);
+      for (const turn of turns) turn.stand.rotation.y = turn.from + turn.delta * eased;
+      render();
+      pedestalRaf = t < 1 ? requestAnimationFrame(step) : null;
+    }
+    pedestalRaf = requestAnimationFrame(step);
   }
 
   function announce(i) {
@@ -334,6 +485,7 @@
   }
 
   function updateNav() {
+    document.body.classList.toggle('is-focused', view === 'focus');
     document.getElementById('back-to-hall').hidden = view === 'overview';
     [...navEl.children].forEach((b, i) => {
       b.classList.toggle('active', i === cur);
@@ -351,12 +503,11 @@
   function focus(i, push) {
     if (!items.length) return;
     i = (i + items.length) % items.length;
-    if (cur >= 0 && cur !== i) setTentDir(items[cur], 1);
     clearPointer();
     document.getElementById('hover-label').hidden = true;
     highlight(-1);
     view = 'focus'; cur = i;
-    setTentDir(items[i], -1);
+    orientPedestals(true);
     tweenTo(frameFor(i), 700);
     updatePlaque(i);
     updateNav();
@@ -372,7 +523,7 @@
     highlight(-1);
     view = 'overview'; cur = -1;
     updateDetail();
-    for (const it of items) setTentDir(it, 1);
+    orientPedestals(false);
     tweenTo(overviewFrame(), 700);
     updatePlaque(-1);
     updateNav();
@@ -436,7 +587,10 @@
         if (finished) return;
         finished = true;
         item.loading.delete(tier); activeLoads--;
-        statusEl.textContent = `${loaded}/${items.length} ready${failures ? ' · ' + failures + ' unavailable' : ''}`;
+        statusEl.hidden = loaded === items.length && failures === 0;
+        statusEl.textContent = failures
+          ? 'Some exhibits could not load. Descriptions are available below.'
+          : 'Loading the collection…';
         pump();
       }
       function failed(error) {
@@ -446,18 +600,38 @@
       }
       try { loader.load('models/' + (high ? item.meta.file : item.meta.overviewFile), gltf => {
         try {
-        const obj = gltf.scene;
+        const obj = new THREE.Group();
+        obj.add(gltf.scene);
+        // Level the reconstructed base before computing the displayed bounds.
+        // The model then spins around an upright Y axis without rocking.
+        if (item.meta.presentationQuaternion) obj.quaternion.fromArray(item.meta.presentationQuaternion);
         if (high && (view !== 'focus' || cur !== item.i)) { disposeObject(obj); return; }
         obj.traverse(o => {
+          if (o.isMesh) { o.castShadow = true; o.receiveShadow = true; }
           if (o.isMesh && o.material && o.material.map)
             o.material.map.anisotropy = Math.min(innerWidth <= 760 ? 2 : 4, renderer.capabilities.getMaxAnisotropy());
         });
-        const box = new THREE.Box3().setFromObject(obj);
+        const box = new THREE.Box3().setFromObject(obj, true);
         const size = box.getSize(new THREE.Vector3());
         const center = box.getCenter(new THREE.Vector3());
-        const scale = 1.45 / Math.max(size.y, 0.6 * Math.max(size.x, size.z));
+        let contactRadius = 0;
+        if (item.meta.presentationQuaternion) {
+          const vertex = new THREE.Vector3();
+          obj.traverse(mesh => {
+            if (!mesh.isMesh) return;
+            const positions = mesh.geometry.attributes.position;
+            for (let i = 0; i < positions.count; i++) {
+              vertex.fromBufferAttribute(positions, i).applyMatrix4(mesh.matrixWorld);
+              if (vertex.y <= box.min.y + size.y * 0.06)
+                contactRadius = Math.max(contactRadius, Math.hypot(vertex.x - center.x, vertex.z - center.z));
+            }
+          });
+        }
+        // Keep the supporting feet/base inside the top slab throughout the turntable rotation.
+        const scale = 1 / Math.max(size.y / 1.7, Math.max(size.x, size.z) / 1.65, contactRadius / 0.65);
+        const clearance = item.meta.presentationQuaternion ? 0.005 : 0.035;
         obj.scale.setScalar(scale);
-        obj.position.set(-center.x * scale, -center.y * scale + 1.62, -center.z * scale);
+        obj.position.set(-center.x * scale, -box.min.y * scale + clearance, -center.z * scale);
         if (!item.spin) { item.spin = new THREE.Group(); item.pivot.add(item.spin); }
         item[tier] = obj;
         if (high && item.low) item.spin.remove(item.low);
@@ -485,11 +659,14 @@
       const a = (i / list.length) * Math.PI * 2 - Math.PI / 2;
       const x = Math.cos(a) * R, z = Math.sin(a) * R;
 
+      const stand = new THREE.Group();
+      stand.userData.itemIndex = i;
+      stand.position.set(x, 0, z);
+      stand.rotation.y = Math.PI / 2 - a;
+      hall.add(stand);
       const col = pedestal();
       col.userData.itemIndex = i;
-      col.position.set(x, 0, z);
-      col.rotation.y = -a;
-      hall.add(col);
+      stand.add(col);
       const topY = col.userData.topY;
 
       const pool = new THREE.Mesh(G.pool, new THREE.MeshBasicMaterial({
@@ -510,23 +687,18 @@
       tent.userData.itemIndex = i;
       const front = new THREE.Mesh(panelGeo, panelMat);
       front.position.set(0, 0.3, 0.18);
-      front.rotation.x = -0.42;
-      const back = new THREE.Mesh(panelGeo, panelMat);
-      back.position.set(0, 0.3, -0.18);
-      back.rotation.y = Math.PI;
-      back.rotation.x = 0.42;
-      tent.add(front, back);
-      tent.position.set(x + Math.cos(a) * 0.58, topY + 0.02, z + Math.sin(a) * 0.58);
-      tent.rotation.y = Math.PI / 2 - a;
-      hall.add(tent);
+      front.rotation.x = -CARD_TILT;
+      tent.add(front);
+      tent.position.set(0, topY - CARD_TOP, CARD_OFFSET);
+      stand.add(tent);
 
       const pivot = new THREE.Group();
       pivot.userData.itemIndex = i;
-      pivot.position.set(x, topY, z);
-      hall.add(pivot);
+      pivot.position.set(0, topY, 0);
+      stand.add(pivot);
 
       const item = {
-        i, meta: m, pivot, spin: null, pool, tent, a, x, z, topY,
+        i, meta: m, stand, pivot, spin: null, pool, tent, a, x, z, topY,
         selectables: [pivot, col, tent],
         low: null, high: null, loading: new Set(),
       };
@@ -536,7 +708,6 @@
       nb.textContent = m.numeral;
       nb.setAttribute('aria-label', m.name);
       nb.setAttribute('aria-pressed', 'false');
-      nb.style.borderColor = HEX[m.verdict] || '#2a3448';
       nb.addEventListener('click', () => focus(i));
       nb.addEventListener('focus', () => highlight(i));
       nb.addEventListener('blur', () => highlight(-1));
@@ -561,7 +732,7 @@
     if (e.key === 'ArrowRight') { e.preventDefault(); step(1); }
     else if (e.key === 'ArrowLeft') { e.preventDefault(); step(-1); }
     else if (e.key === 'Escape' || e.key === 'Home' || e.key.toLowerCase() === 'o') { e.preventDefault(); overview(); }
-    else if (/^[1-9]$/.test(e.key)) { const i = items.findIndex(it => it.meta.legacyId === Number(e.key)); if (i >= 0) focus(i); }
+    else if (/^[1-7]$/.test(e.key)) { const i = Number(e.key) - 1; if (i < items.length) focus(i); }
   });
 
   document.getElementById('prev').addEventListener('click', () => step(-1));
@@ -675,6 +846,7 @@
       const dt = Math.min((now - last) / 1000, 0.05); last = now;
       const list = view === 'focus' && cur >= 0 ? [items[cur]] : items;
       for (const it of list) if (it.spin) it.spin.rotation.y += 0.35 * dt;
+      driftDust(dt);
       render();
       turnRaf = requestAnimationFrame(loop);
     }
@@ -684,7 +856,10 @@
   motionQuery.addEventListener('change', e => {
     REDUCE = e.matches;
     syncTurntable();
-    if (REDUCE) dispatchEvent(new Event('resize'));
+    if (REDUCE) {
+      orientPedestals(view === 'focus', true);
+      dispatchEvent(new Event('resize'));
+    }
   });
 
   // --- boot ------------------------------------------------------------------

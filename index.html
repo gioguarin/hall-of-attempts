@@ -111,6 +111,44 @@
     #fallback-list { max-height:none; }
     body.webgl-unavailable #fallback { width:auto; }
   }
+  /* Quiet museum typography lets the room carry the first impression. */
+  :root { --gold:#c6ac79; --ink:#eee8dc; --muted:#b6b2a7; }
+  header { left:36px; top:32px; }
+  .kicker { font:10px/1.5 system-ui,sans-serif; letter-spacing:.23em; }
+  h1 { margin:10px 0; font:400 36px/1.1 Georgia,serif; letter-spacing:-.025em; }
+  .sub { font:13px/1.65 system-ui,sans-serif; color:#c7c4b9; }
+  #status { display:block; margin-top:12px; font:10px/1.5 system-ui,sans-serif; letter-spacing:.12em; color:#b6b2a7; }
+  .is-focused header h1 { font-size:26px; }
+  .is-focused header .sub { display:none; }
+  #fallback { right:32px; top:32px; width:220px; border-color:rgba(198,172,121,.25);
+    background:rgba(18,20,18,.85); border-radius:2px; color:#d6d0c3; }
+  #nav { bottom:30px; border:0; border-radius:2px; gap:8px; padding:6px 12px;
+    background:rgba(16,20,19,.8); backdrop-filter:blur(10px); }
+  #nav::before { content:'THE COLLECTION'; position:absolute; bottom:calc(100% + 12px); left:0; right:0;
+    text-align:center; font:9px/1.3 system-ui,sans-serif; letter-spacing:.26em; color:#c6bda9; }
+  #nav button { border:0; border-bottom:1px solid transparent; border-radius:0;
+    color:#bdb7a8; font:15px Georgia,serif; background:transparent; }
+  #nav button.active { background:transparent; border-bottom-color:var(--gold); color:#fff4d9; }
+  #nav button:hover { background:rgba(198,172,121,.08); color:#fff4d9; }
+  .hint { font:12px/1.6 system-ui,sans-serif; color:#bdb8ab; right:34px; bottom:32px; max-width:240px; }
+  #back-to-hall { border-radius:2px; border-color:rgba(198,172,121,.3); background:rgba(20,24,22,.85); }
+  #plaque { background:rgba(19,23,21,.94); border-color:rgba(198,172,121,.3); border-radius:2px; }
+  #plaque .meta { color:#b8b3a6; }
+  @media (max-width:1100px) and (min-width:761px) { .hint { bottom:110px; } }
+  @media (max-width:760px) {
+    body { background:#101513; gap:12px; padding-top:20px; }
+    header { margin-bottom:4px; }
+    h1 { font-size:30px; }
+    .kicker { font-size:9px; }
+    .sub { font:12px/1.6 system-ui,sans-serif; }
+    #status { margin-top:8px; font-size:9px; }
+    #scene { border-color:rgba(198,172,121,.22); border-radius:2px; height:clamp(300px,48svh,480px); }
+    #nav { padding:4px 7px; gap:5px; border:1px solid rgba(198,172,121,.14); border-radius:2px; }
+    #nav::before { display:none; }
+    #nav button { font-size:15px; }
+    .hint { margin:0; max-width:none; font-size:11px; }
+    #fallback { width:auto; }
+  }
   [hidden] { display:none !important; }
   @media (prefers-reduced-motion: reduce) { #plaque { transition:none; } }
 </style>
@@ -123,10 +161,10 @@
 </div>
 
 <header>
-  <div class="kicker">local models &middot; 2026-11-08</div>
+  <div class="kicker">A STUDY IN IMPERFECT FORM</div>
   <h1>The Hall of Attempts</h1>
-  <div class="sub">one object each, from one image, on a Roman column.<br>
-    <span class="technical">Pixal3D &middot; ~5,000 faces &middot; meshopt &middot; no cloud.<br></span><span id="status" role="status">Loading exhibits…</span></div>
+  <div class="sub">One photograph. One reconstruction.<br>Seven objects, and the things they lost.</div>
+  <span id="status" role="status">Opening the collection…</span>
 </header>
 
 <div id="hover-label" aria-hidden="true" hidden></div>
@@ -152,7 +190,7 @@
 <div id="live" aria-live="polite"></div>
 
 <details id="fallback">
-  <summary>Exhibit guide &amp; credits</summary>
+  <summary>About the collection</summary>
   <p>Each attempt starts with one image. Browse the results and their limitations here, with or without 3D.</p>
   <ol id="fallback-list">
     <li><a href="#/ecto" data-exhibit="ecto">Ecto-1</a><p>Weak: the front and roof rack melt.</p><a href="sources/ecto.jpg">Source image</a> · <a href="models/ecto.glb">3D model</a></li>
@@ -165,7 +203,7 @@
   </ol>
   <p class="fallback-links"><a href="credits.html">Photographer credits, source licences &amp; model licences</a></p>
 </details>
-<noscript><p>JavaScript is disabled. Open “Exhibit guide &amp; credits” to browse source images, descriptions, and model downloads.</p></noscript>
+<noscript><p>JavaScript is disabled. Open “About the collection” to browse source images, descriptions, and model downloads.</p></noscript>
 
 <script src="vendor/three.min.js"></script>
 <script src="vendor/GLTFLoader.js"></script>

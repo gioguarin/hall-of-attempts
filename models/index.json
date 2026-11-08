@@ -6,7 +6,7 @@
     "faces": 4988,
     "mb": 0.994,
     "verdict": "weak",
-    "numeral": "III",
+    "numeral": "I",
     "note": "Long, glossy, cluttered backdrop; the front and roof rack melt.",
     "source": "sources/ecto.jpg",
     "overviewFile": "overview/ecto.glb",
@@ -32,7 +32,7 @@
     "faces": 4996,
     "mb": 0.613,
     "verdict": "failed",
-    "numeral": "IV",
+    "numeral": "II",
     "note": "Hollow shell shot dead-on; the visor collapsed entirely.",
     "source": "sources/gladiator.jpg",
     "overviewFile": "overview/gladiator.glb",
@@ -58,7 +58,7 @@
     "faces": 4992,
     "mb": 1.001,
     "verdict": "partial",
-    "numeral": "V",
+    "numeral": "III",
     "note": "Livery survives; the open cage and the lettering do not.",
     "source": "sources/bumper-car.jpg",
     "overviewFile": "overview/bumper-car.glb",
@@ -77,7 +77,14 @@
     "changes": "Reference image generated with FLUX.2 [klein] 4B; reconstructed with Pixal3D, retopologised and meshopt-compressed. Overview textures resized to 512²; focus textures 1024².",
     "generationModel": "FLUX.2 [klein] 4B",
     "generationModelLicence": "Apache-2.0 (weights; separate from output licence)",
-    "preparedDate": "2026-11-08"
+    "preparedDate": "2026-11-08",
+    "presentationQuaternion": [
+      -0.10401028,
+      0.0,
+      -0.00030162,
+      0.99457618
+    ],
+    "presentationNote": "Reconstructed base/contact plane levelled to the pedestal before centring and grounding; the same alignment is used for both texture tiers."
   },
   {
     "file": "drum.glb",
@@ -86,7 +93,7 @@
     "faces": 4970,
     "mb": 0.422,
     "verdict": "good",
-    "numeral": "VI",
+    "numeral": "IV",
     "note": "Closed, matte, low-frequency — a clean result.",
     "source": "sources/drum.jpg",
     "overviewFile": "overview/drum.glb",
@@ -114,7 +121,7 @@
     "faces": 4876,
     "mb": 0.591,
     "verdict": "good",
-    "numeral": "VII",
+    "numeral": "V",
     "note": "Chevrons survive; one leg is distorted.",
     "source": "sources/barrier.jpg",
     "overviewFile": "overview/barrier.glb",
@@ -133,7 +140,14 @@
     "changes": "Reference image generated with FLUX.2 [klein] 4B; reconstructed with Pixal3D, retopologised and meshopt-compressed. Overview textures resized to 512²; focus textures 1024².",
     "generationModel": "FLUX.2 [klein] 4B",
     "generationModelLicence": "Apache-2.0 (weights; separate from output licence)",
-    "preparedDate": "2026-11-08"
+    "preparedDate": "2026-11-08",
+    "presentationQuaternion": [
+      -0.10189767,
+      0.0,
+      -0.01940429,
+      0.99460562
+    ],
+    "presentationNote": "Reconstructed base/contact plane levelled to the pedestal before centring and grounding; the same alignment is used for both texture tiers."
   },
   {
     "file": "leica.glb",
@@ -142,7 +156,7 @@
     "faces": 4949,
     "mb": 0.841,
     "verdict": "good",
-    "numeral": "VIII",
+    "numeral": "VI",
     "note": "Chrome and a dark background still read; base-plate artefact.",
     "source": "sources/leica.jpg",
     "overviewFile": "overview/leica.glb",
@@ -159,7 +173,14 @@
     "licence": "CC BY-SA 2.0 FR",
     "licenceUrl": "https://creativecommons.org/licenses/by-sa/2.0/fr/",
     "changes": "Source image resized for display; reconstructed as a textured 3D mesh with Pixal3D, retopologised and meshopt-compressed. Overview textures resized to 512²; focus textures 1024².",
-    "preparedDate": "2026-11-08"
+    "preparedDate": "2026-11-08",
+    "presentationQuaternion": [
+      -0.26323757,
+      0.0,
+      -0.00041463,
+      0.96473095
+    ],
+    "presentationNote": "Reconstructed base/contact plane levelled to the pedestal before centring and grounding; the same alignment is used for both texture tiers."
   },
   {
     "file": "samurai.glb",
@@ -168,7 +189,7 @@
     "faces": 4994,
     "mb": 0.831,
     "verdict": "partial",
-    "numeral": "IX",
+    "numeral": "VII",
     "note": "Side view loses the face mask; dome, crest and lacing survive.",
     "source": "sources/samurai.jpg",
     "overviewFile": "overview/samurai.glb",

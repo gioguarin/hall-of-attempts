@@ -28,3 +28,11 @@ geometry with controlled DOM/time and a mocked renderer. It is not a physical GP
 cold load, drag, transitions and sustained animation on a real mid-range laptop and phone before claiming
 latency/frame-time targets pass. Track renderer.info.render.calls/triangles; info.memory gives counts,
 not byte totals. Use the browser performance timeline for decode/upload and long-task measurements.
+
+## Architectural rendering
+
+The refined room adds procedural marble/travertine/floor/sky textures (approximately 8 MiB with
+mipmaps) and one shadow-casting skylight. Shadow maps use 512² on phones and 1024² on desktop,
+with VSM filtering for soft edges. Repeated piers and arches are instanced; the coffer surfaces share
+one mesh. These replace the earlier flat shell. The shadow pass adds ongoing GPU cost while models
+rotate, so the physical-device frame-time budgets above still require measurement.

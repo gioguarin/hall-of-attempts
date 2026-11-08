@@ -14,12 +14,11 @@ guide provides descriptions, source images, model downloads, and credits without
 
 Canonical links use stable names, such as `#/gladiator`. Legacy links `#/3`–`#/9` retain their original
 exhibit identity; `#/4` still opens Roman secutor. Removed exhibits `#/1` and `#/2` return to overview.
-Navigation retains the original Roman numerals III–IX to avoid relabelling existing references.
+The public collection is numbered I–VII; number keys 1–7 match that visible order.
+Older numeric deep links retain their original exhibit identity; new links use the stable names.
 
 ## Assets and rights
 
-DOOM mask and Onewheel are excluded from this gallery and its publication bundle because the lab
-records no redistribution permission. Original research inputs/results are retained outside the gallery.
 See [credits](credits.html), [asset attribution](LICENCES.md), and [machine-readable provenance](models/index.json).
 CC-derived models and textures carry the source's exact BY-SA version, including France 2.0 for Leica.
 Generated reference images and their reconstructions are explicitly offered under Apache-2.0 to the
@@ -43,4 +42,17 @@ python3 scripts/publish.py --out publish/hall-of-attempts
 ```
 
 Publishing assembles local files and preserves the destination's `.git`; it does not commit, push,
-or deploy. It excludes restricted assets even if they remain in older repository history or deployments.
+or deploy.
+
+The archway recesses open into blackness. A single low-count particle field drifts slowly through the
+skylight and pauses with reduced motion or a hidden page. Pedestal labels hang below the top rim,
+with their upper edges aligned to the abacus surface in both overview and focus.
+
+Cards are fixed to their pedestal assembly. Entering close-up turns the assemblies inward, and
+browsing other items keeps that orientation. Returning to overview turns all assemblies outward
+together in the same direction. Cards keep the same local mount and aligned top edge throughout;
+reduced motion snaps the assemblies into place.
+
+The Leica, bumper car and road barrier have fixed presentation alignments that level their reconstructed
+base/contact planes. Precise vertex bounds determine the contact height after rotation, and supporting
+feet fit inside the top slab throughout the turntable. Both texture tiers share these corrections.
