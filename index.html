@@ -13,84 +13,125 @@
   #scene { position:fixed; inset:0; }
   canvas { display:block; }
 
-  header { position:fixed; left:28px; top:24px; pointer-events:none; z-index:5; }
+  header { text-shadow:0 2px 12px #000; position:fixed; left:28px; top:24px; pointer-events:none; z-index:5; }
   .kicker { font:600 10px/1 ui-monospace,monospace; letter-spacing:.24em; text-transform:uppercase; color:var(--gold); }
   h1 { margin:10px 0 6px; font:700 30px/1.1 Georgia,serif; letter-spacing:.02em; }
   .sub { font:12px/1.7 ui-monospace,monospace; color:var(--muted); }
-  #status { color:#66748d; }
+  #status { color:#a3afc1; }
 
-  /* exhibit pins: HTML placards projected from 3D */
-  #pins { position:fixed; inset:0; pointer-events:none; z-index:4; }
-  .pin { position:absolute; transform:translate(-50%,-50%); pointer-events:auto; cursor:pointer;
-    background:rgba(7,10,15,.82); border:1px solid rgba(201,168,106,.35); border-radius:2px;
-    padding:7px 11px 6px; text-align:left; color:var(--ink); white-space:nowrap;
-    box-shadow:0 2px 14px rgba(0,0,0,.45); transition:opacity .25s, border-color .2s; }
-  .pin:hover, .pin:focus-visible { border-color:var(--gold); outline:none; }
-  .pin .num { color:var(--gold); font:600 10px/1 ui-monospace,monospace; letter-spacing:.16em; margin-right:6px; }
-  .pin .nm { font:600 13px/1.3 Georgia,serif; letter-spacing:.02em; }
-  .dot { display:inline-block; width:6px; height:6px; border-radius:50%; margin-right:6px; vertical-align:middle; }
-  .pin.dim { opacity:.35; }
+  a { color:#d8bf90; text-underline-offset:3px; }
+  button:focus-visible, a:focus-visible, summary:focus-visible { outline:2px solid var(--gold); outline-offset:4px; }
+  #scene { overflow:hidden; }
+  #scene canvas { width:100%; height:100%; touch-action:none; cursor:grab; }
+  #scene canvas:active { cursor:grabbing; }
+  #hover-label { position:fixed; z-index:8; pointer-events:none;
+    padding:8px 12px; border:1px solid var(--gold); border-radius:4px;
+    background:#0d1420; color:var(--ink); font:14px Georgia,serif; }
+  .dot { display:inline-block; width:7px; height:7px; border-radius:50%; margin-right:6px; vertical-align:middle; }
 
   /* focus plaque */
-  #plaque { position:fixed; left:28px; bottom:26px; z-index:6; display:none; width:340px;
+  #plaque { position:fixed; left:28px; bottom:26px; z-index:6; display:none; width:370px; max-height:calc(100vh - 170px); overflow-y:auto;
     background:rgba(7,10,15,.92); border:1px solid rgba(201,168,106,.35); border-radius:3px;
     padding:14px 16px; box-shadow:0 10px 40px rgba(0,0,0,.5); }
   #plaque.show { display:block; }
   #plaque .top { display:flex; gap:12px; align-items:flex-start; }
-  #plaque img { width:74px; height:74px; object-fit:cover; border:1px solid #2a3448; border-radius:2px; }
+  #plaque img { width:112px; height:112px; flex:none; object-fit:contain; background:#141c29; border:1px solid #2a3448; border-radius:2px; }
   #plaque .num { color:var(--gold); font:600 10px/1 ui-monospace,monospace; letter-spacing:.2em; }
   #plaque h2 { margin:5px 0 4px; font:600 19px/1.15 Georgia,serif; }
   #plaque .verdict { font:11px ui-monospace,monospace; letter-spacing:.06em; text-transform:uppercase; }
-  #plaque .note { margin:11px 0 0; font:12px/1.55 Georgia,serif; color:#b9c6d9; }
-  #plaque .meta { margin-top:9px; font:10.5px ui-monospace,monospace; color:#66748d; }
+  #plaque .note { margin:11px 0 0; font:14px/1.55 Georgia,serif; color:#b9c6d9; }
+  #plaque .meta { margin-top:9px; font:10.5px ui-monospace,monospace; color:#a3afc1; }
 
   /* bottom navigation */
   #nav { position:fixed; left:50%; bottom:24px; transform:translateX(-50%); z-index:6;
     display:flex; gap:7px; align-items:center; background:rgba(7,10,15,.75);
     border:1px solid #1b2434; border-radius:999px; padding:7px 10px; }
   #nav button { border:1px solid #2a3448; background:transparent; color:var(--muted);
-    width:26px; height:26px; border-radius:50%; font:600 10px ui-monospace,monospace; cursor:pointer; }
+    min-width:42px; height:42px; flex:none; border-radius:50%; font:600 10px ui-monospace,monospace; cursor:pointer; }
   #nav button:hover { color:var(--ink); border-color:var(--gold); }
   #nav button.active { background:#141c29; color:var(--ink); border-color:var(--gold); }
-  .edge { position:fixed; top:50%; transform:translateY(-50%); z-index:6; width:48px; height:64px;
+  .edge { position:absolute; top:50%; transform:translateY(-50%); z-index:6; width:48px; height:64px;
     background:transparent; color:#8fa0b8; border:1px solid transparent; font-size:30px; line-height:1;
     cursor:pointer; border-radius:6px; }
   .edge:hover { color:var(--ink); border-color:#2a3448; background:rgba(7,10,15,.6); }
   #prev { left:10px; } #next { right:10px; }
   .edge:disabled { opacity:.25; cursor:default; }
 
-  .tools { position:fixed; right:26px; top:24px; z-index:6; display:flex; gap:8px; }
-  .tool { background:#0d1420; border:1px solid #24314a; color:#c9d4e6; border-radius:6px;
-    padding:8px 13px; font:11px ui-monospace,monospace; letter-spacing:.06em; cursor:pointer; }
-  .tool:hover { border-color:var(--gold); color:#f2e7cf; }
-  .hint { position:fixed; right:26px; bottom:26px; z-index:6; font:11px/1.8 ui-monospace,monospace;
+  #back-to-hall { position:absolute; left:28px; top:150px; z-index:7;
+    display:inline-flex; align-items:center; min-height:44px; padding:8px 13px;
+    border:1px solid #24314a; border-radius:6px; background:#0d1420;
+    color:#dce2ed; font:14px system-ui; text-decoration:none; }
+  #back-to-hall:hover { border-color:var(--gold); }
+  .hint { position:fixed; right:26px; bottom:100px; max-width:260px; z-index:6; font:12px/1.8 ui-monospace,monospace;
     color:#8fa0b8; text-align:right; }
   .hint kbd { border:1px solid #2a3448; border-bottom-width:2px; border-radius:3px; padding:0 4px; }
 
   #live { position:fixed; width:1px; height:1px; overflow:hidden; clip-path:inset(50%); }
 
-  @media (max-width: 760px) {
-    header { left:16px; top:14px; } h1 { font-size:23px; } .sub { display:none; }
-    #nav { bottom:14px; gap:5px; padding:6px 8px; } #nav button { width:24px; height:24px; }
-    #plaque { left:12px; right:12px; bottom:74px; width:auto; }
-    .hint { display:none; } .tools { right:14px; top:12px; }
+  #plaque-credit { display:inline-block; margin-top:10px; font:12px/1.5 sans-serif; }
+  #fallback { position:fixed; right:26px; top:84px; width:260px; z-index:7;
+    border:1px solid #24314a; border-radius:6px; padding:10px 12px; background:#0d1420; font:13px/1.5 sans-serif; }
+  #fallback summary { cursor:pointer; min-height:24px; }
+  #fallback-list { padding-left:22px; max-height:55vh; overflow:auto; margin-bottom:8px; }
+  #fallback-list li { padding:7px 0; }
+  #fallback-list p { margin:3px 0; color:#b9c6d9; }
+  .fallback-links { font-size:12px; }
+  body.webgl-unavailable #scene, body.webgl-unavailable #nav,
+  body.webgl-unavailable .hint { display:none; }
+  body.webgl-unavailable #fallback { top:170px; left:28px; width:min(600px,calc(100vw - 56px)); }
+
+  @media (max-width: 1100px) and (min-width: 761px) {
+    #plaque { width:300px; bottom:108px; max-height:calc(100vh - 265px); }
+    #plaque img { width:84px; height:84px; }
+    .hint { bottom:104px; }
   }
-  @media (prefers-reduced-motion: reduce) { .pin, #plaque { transition:none; } }
+  @media (max-width: 760px) {
+    html, body { height:auto; min-height:100%; overflow:auto; }
+    body { display:grid; grid-template-areas:"header" "scene" "hint" "nav" "plaque" "fallback";
+      grid-template-columns:minmax(0,1fr); gap:12px; padding:14px 12px max(18px,env(safe-area-inset-bottom)); }
+    header { grid-area:header; position:static; pointer-events:auto; }
+    h1 { font-size:25px; margin:8px 0; }
+    .sub { font:11px/1.5 ui-monospace,monospace; }
+    .sub .technical { display:none; }
+    #status { display:block; }
+    #back-to-hall { left:10px; top:10px; }
+    #scene { grid-area:scene; position:relative; inset:auto; height:clamp(280px,48svh,480px);
+      width:100%; border:1px solid #1b2434; border-radius:8px; }
+    #scene canvas { position:absolute; inset:0; touch-action:pan-y; }
+    .edge { width:44px; height:54px; background:rgba(7,10,15,.5); }
+    #prev { left:2px; } #next { right:2px; }
+    #nav { grid-area:nav; position:static; transform:none; width:100%; min-width:0;
+      justify-content:flex-start; gap:5px; padding:7px; overflow-x:auto; border-radius:8px; }
+    #nav button { min-width:42px; height:42px; font-size:12px; }
+    #plaque { grid-area:plaque; position:static; width:auto; max-height:44svh; padding:14px; }
+    #plaque img { width:112px; height:112px; }
+    #plaque h2 { font-size:21px; }
+    .hint { grid-area:hint; position:static; max-width:none; text-align:left; font-size:12px; margin:0; }
+    #fallback { grid-area:fallback; position:static; width:auto; }
+    #fallback-list { max-height:none; }
+    body.webgl-unavailable #fallback { width:auto; }
+  }
+  [hidden] { display:none !important; }
+  @media (prefers-reduced-motion: reduce) { #plaque { transition:none; } }
 </style>
 </head>
 <body>
-<div id="scene"></div>
+<div id="scene" aria-label="Interactive 3D gallery">
+  <a id="back-to-hall" href="#/" hidden aria-label="Back to the hall overview">← Back to hall</a>
+  <button class="edge" id="prev" aria-label="Previous exhibit">&#8249;</button>
+  <button class="edge" id="next" aria-label="Next exhibit">&#8250;</button>
+</div>
 
 <header>
   <div class="kicker">local models &middot; 2026-11-08</div>
   <h1>The Hall of Attempts</h1>
   <div class="sub">one object each, from one image, on a Roman column.<br>
-    Pixal3D &middot; ~5,000 faces &middot; meshopt &middot; no cloud.<br><span id="status">loading 0/9</span></div>
+    <span class="technical">Pixal3D &middot; ~5,000 faces &middot; meshopt &middot; no cloud.<br></span><span id="status" role="status">Loading exhibits…</span></div>
 </header>
 
-<div id="pins"></div>
+<div id="hover-label" aria-hidden="true" hidden></div>
 
-<div id="plaque">
+<section id="plaque" aria-labelledby="plaque-name">
   <div class="top">
     <img id="plaque-src" alt="">
     <div>
@@ -101,20 +142,30 @@
   </div>
   <p class="note" id="plaque-note"></p>
   <div class="meta" id="plaque-meta"></div>
-</div>
+  <a id="plaque-credit" href="credits.html">Source and model credits</a>
+</section>
 
-<button class="edge" id="prev" aria-label="Previous exhibit">&#8249;</button>
-<button class="edge" id="next" aria-label="Next exhibit">&#8250;</button>
 
-<div class="tools">
-  <button class="tool" id="overviewBtn">overview</button>
-  <button class="tool" id="rotate">turntable</button>
-</div>
+<div id="nav" role="group" aria-label="Exhibits"></div>
 
-<div id="nav" role="tablist" aria-label="Exhibits"></div>
-
-<div class="hint"><kbd>&larr;</kbd><kbd>&rarr;</kbd> browse &middot; click a piece &middot; <kbd>esc</kbd> overview</div>
+<p class="hint" id="hint">Drag to rotate the hall · select an object to inspect. <kbd>←</kbd> <kbd>→</kbd> browse · <kbd>Esc</kbd> overview</p>
 <div id="live" aria-live="polite"></div>
+
+<details id="fallback">
+  <summary>Exhibit guide &amp; credits</summary>
+  <p>Each attempt starts with one image. Browse the results and their limitations here, with or without 3D.</p>
+  <ol id="fallback-list">
+    <li><a href="#/ecto" data-exhibit="ecto">Ecto-1</a><p>Weak: the front and roof rack melt.</p><a href="sources/ecto.jpg">Source image</a> · <a href="models/ecto.glb">3D model</a></li>
+    <li><a href="#/gladiator" data-exhibit="gladiator">Roman secutor</a><p>Failed: the visor collapsed entirely.</p><a href="sources/gladiator.jpg">Source image</a> · <a href="models/gladiator.glb">3D model</a></li>
+    <li><a href="#/bumper-car" data-exhibit="bumper-car">Bumper car</a><p>Partial: livery survives; the open cage and lettering do not.</p><a href="sources/bumper-car.jpg">Source image</a> · <a href="models/bumper-car.glb">3D model</a></li>
+    <li><a href="#/drum" data-exhibit="drum">Oil drum</a><p>Good: a clean result from a closed, matte object.</p><a href="sources/drum.jpg">Source image</a> · <a href="models/drum.glb">3D model</a></li>
+    <li><a href="#/barrier" data-exhibit="barrier">Road barrier</a><p>Good: chevrons survive; one leg is distorted.</p><a href="sources/barrier.jpg">Source image</a> · <a href="models/barrier.glb">3D model</a></li>
+    <li><a href="#/leica" data-exhibit="leica">Leica M3</a><p>Compare the reconstruction with its source photograph.</p><a href="sources/leica.jpg">Source image</a> · <a href="models/leica.glb">3D model</a></li>
+    <li><a href="#/samurai" data-exhibit="samurai">Samurai kabuto</a><p>Compare the reconstruction with its source photograph.</p><a href="sources/samurai.jpg">Source image</a> · <a href="models/samurai.glb">3D model</a></li>
+  </ol>
+  <p class="fallback-links"><a href="credits.html">Photographer credits, source licences &amp; model licences</a></p>
+</details>
+<noscript><p>JavaScript is disabled. Open “Exhibit guide &amp; credits” to browse source images, descriptions, and model downloads.</p></noscript>
 
 <script src="vendor/three.min.js"></script>
 <script src="vendor/GLTFLoader.js"></script>
