@@ -1,0 +1,124 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Hall of Attempts 3D</title>
+<style>
+  :root { --gold:#c9a86a; --ink:#e7eef9; --muted:#8fa0b8; --bg:#05070b;
+          --excellent:#37e08a; --good:#7de3ff; --partial:#ffc857; --weak:#ff9f43; --failed:#ff3b5c; }
+  * { box-sizing: border-box; }
+  html, body { margin:0; height:100%; overflow:hidden; background:var(--bg); }
+  body { font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif; color:var(--ink); }
+  #scene { position:fixed; inset:0; }
+  canvas { display:block; }
+
+  header { position:fixed; left:28px; top:24px; pointer-events:none; z-index:5; }
+  .kicker { font:600 10px/1 ui-monospace,monospace; letter-spacing:.24em; text-transform:uppercase; color:var(--gold); }
+  h1 { margin:10px 0 6px; font:700 30px/1.1 Georgia,serif; letter-spacing:.02em; }
+  .sub { font:12px/1.7 ui-monospace,monospace; color:var(--muted); }
+  #status { color:#66748d; }
+
+  /* exhibit pins: HTML placards projected from 3D */
+  #pins { position:fixed; inset:0; pointer-events:none; z-index:4; }
+  .pin { position:absolute; transform:translate(-50%,-50%); pointer-events:auto; cursor:pointer;
+    background:rgba(7,10,15,.82); border:1px solid rgba(201,168,106,.35); border-radius:2px;
+    padding:7px 11px 6px; text-align:left; color:var(--ink); white-space:nowrap;
+    box-shadow:0 2px 14px rgba(0,0,0,.45); transition:opacity .25s, border-color .2s; }
+  .pin:hover, .pin:focus-visible { border-color:var(--gold); outline:none; }
+  .pin .num { color:var(--gold); font:600 10px/1 ui-monospace,monospace; letter-spacing:.16em; margin-right:6px; }
+  .pin .nm { font:600 13px/1.3 Georgia,serif; letter-spacing:.02em; }
+  .dot { display:inline-block; width:6px; height:6px; border-radius:50%; margin-right:6px; vertical-align:middle; }
+  .pin.dim { opacity:.35; }
+
+  /* focus plaque */
+  #plaque { position:fixed; left:28px; bottom:26px; z-index:6; display:none; width:340px;
+    background:rgba(7,10,15,.92); border:1px solid rgba(201,168,106,.35); border-radius:3px;
+    padding:14px 16px; box-shadow:0 10px 40px rgba(0,0,0,.5); }
+  #plaque.show { display:block; }
+  #plaque .top { display:flex; gap:12px; align-items:flex-start; }
+  #plaque img { width:74px; height:74px; object-fit:cover; border:1px solid #2a3448; border-radius:2px; }
+  #plaque .num { color:var(--gold); font:600 10px/1 ui-monospace,monospace; letter-spacing:.2em; }
+  #plaque h2 { margin:5px 0 4px; font:600 19px/1.15 Georgia,serif; }
+  #plaque .verdict { font:11px ui-monospace,monospace; letter-spacing:.06em; text-transform:uppercase; }
+  #plaque .note { margin:11px 0 0; font:12px/1.55 Georgia,serif; color:#b9c6d9; }
+  #plaque .meta { margin-top:9px; font:10.5px ui-monospace,monospace; color:#66748d; }
+
+  /* bottom navigation */
+  #nav { position:fixed; left:50%; bottom:24px; transform:translateX(-50%); z-index:6;
+    display:flex; gap:7px; align-items:center; background:rgba(7,10,15,.75);
+    border:1px solid #1b2434; border-radius:999px; padding:7px 10px; }
+  #nav button { border:1px solid #2a3448; background:transparent; color:var(--muted);
+    width:26px; height:26px; border-radius:50%; font:600 10px ui-monospace,monospace; cursor:pointer; }
+  #nav button:hover { color:var(--ink); border-color:var(--gold); }
+  #nav button.active { background:#141c29; color:var(--ink); border-color:var(--gold); }
+  .edge { position:fixed; top:50%; transform:translateY(-50%); z-index:6; width:48px; height:64px;
+    background:transparent; color:#8fa0b8; border:1px solid transparent; font-size:30px; line-height:1;
+    cursor:pointer; border-radius:6px; }
+  .edge:hover { color:var(--ink); border-color:#2a3448; background:rgba(7,10,15,.6); }
+  #prev { left:10px; } #next { right:10px; }
+  .edge:disabled { opacity:.25; cursor:default; }
+
+  .tools { position:fixed; right:26px; top:24px; z-index:6; display:flex; gap:8px; }
+  .tool { background:#0d1420; border:1px solid #24314a; color:#c9d4e6; border-radius:6px;
+    padding:8px 13px; font:11px ui-monospace,monospace; letter-spacing:.06em; cursor:pointer; }
+  .tool:hover { border-color:var(--gold); color:#f2e7cf; }
+  .hint { position:fixed; right:26px; bottom:26px; z-index:6; font:11px/1.8 ui-monospace,monospace;
+    color:#8fa0b8; text-align:right; }
+  .hint kbd { border:1px solid #2a3448; border-bottom-width:2px; border-radius:3px; padding:0 4px; }
+
+  #live { position:fixed; width:1px; height:1px; overflow:hidden; clip-path:inset(50%); }
+
+  @media (max-width: 760px) {
+    header { left:16px; top:14px; } h1 { font-size:23px; } .sub { display:none; }
+    #nav { bottom:14px; gap:5px; padding:6px 8px; } #nav button { width:24px; height:24px; }
+    #plaque { left:12px; right:12px; bottom:74px; width:auto; }
+    .hint { display:none; } .tools { right:14px; top:12px; }
+  }
+  @media (prefers-reduced-motion: reduce) { .pin, #plaque { transition:none; } }
+</style>
+</head>
+<body>
+<div id="scene"></div>
+
+<header>
+  <div class="kicker">local models &middot; 2026-11-08</div>
+  <h1>The Hall of Attempts</h1>
+  <div class="sub">one object each, from one image, on a Roman column.<br>
+    Pixal3D &middot; ~5,000 faces &middot; meshopt &middot; no cloud.<br><span id="status">loading 0/9</span></div>
+</header>
+
+<div id="pins"></div>
+
+<div id="plaque">
+  <div class="top">
+    <img id="plaque-src" alt="">
+    <div>
+      <div class="num" id="plaque-num"></div>
+      <h2 id="plaque-name"></h2>
+      <div class="verdict" id="plaque-verdict"></div>
+    </div>
+  </div>
+  <p class="note" id="plaque-note"></p>
+  <div class="meta" id="plaque-meta"></div>
+</div>
+
+<button class="edge" id="prev" aria-label="Previous exhibit">&#8249;</button>
+<button class="edge" id="next" aria-label="Next exhibit">&#8250;</button>
+
+<div class="tools">
+  <button class="tool" id="overviewBtn">overview</button>
+  <button class="tool" id="rotate">turntable</button>
+</div>
+
+<div id="nav" role="tablist" aria-label="Exhibits"></div>
+
+<div class="hint"><kbd>&larr;</kbd><kbd>&rarr;</kbd> browse &middot; click a piece &middot; <kbd>esc</kbd> overview</div>
+<div id="live" aria-live="polite"></div>
+
+<script src="vendor/three.min.js"></script>
+<script src="vendor/GLTFLoader.js"></script>
+<script src="vendor/meshopt_decoder.js"></script>
+<script src="room.js"></script>
+</body>
+</html>

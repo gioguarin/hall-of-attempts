@@ -1,0 +1,110 @@
+[
+ {
+  "file": "doom.glb",
+  "name": "MF DOOM mask",
+  "backend": "Pixal3D",
+  "faces": 5000,
+  "mb": 0.45,
+  "verdict": "excellent",
+  "numeral": "I",
+  "note": "Single shell, three-quarter view \u2014 the easiest read in the set.",
+  "source": "sources/doom.jpg",
+  "licence": "third-party"
+ },
+ {
+  "file": "onewheel.glb",
+  "name": "Onewheel GT",
+  "backend": "Pixal3D",
+  "faces": 4998,
+  "mb": 0.68,
+  "verdict": "good",
+  "numeral": "II",
+  "note": "Flat product render; deck and tread survive, a base plate is invented.",
+  "source": "sources/onewheel.jpg",
+  "licence": "third-party"
+ },
+ {
+  "file": "ecto.glb",
+  "name": "Ecto-1",
+  "backend": "Pixal3D",
+  "faces": 4992,
+  "mb": 0.99,
+  "verdict": "weak",
+  "numeral": "III",
+  "note": "Long, glossy, cluttered backdrop; the front and roof rack melt.",
+  "source": "sources/ecto.jpg",
+  "licence": "CC BY-SA 2.0"
+ },
+ {
+  "file": "gladiator.glb",
+  "name": "Roman secutor",
+  "backend": "Pixal3D",
+  "faces": 4998,
+  "mb": 0.61,
+  "verdict": "failed",
+  "numeral": "IV",
+  "note": "Hollow shell shot dead-on; the visor collapsed entirely.",
+  "source": "sources/gladiator.jpg",
+  "licence": "CC BY-SA 4.0"
+ },
+ {
+  "file": "bumper-car.glb",
+  "name": "Bumper car",
+  "backend": "Pixal3D",
+  "faces": 4992,
+  "mb": 1.0,
+  "verdict": "partial",
+  "numeral": "V",
+  "note": "Livery survives; the open cage and the lettering do not.",
+  "source": "sources/bumper-car.jpg",
+  "licence": "Apache-2.0"
+ },
+ {
+  "file": "drum.glb",
+  "name": "Oil drum",
+  "backend": "Pixal3D",
+  "faces": 4992,
+  "mb": 0.42,
+  "verdict": "good",
+  "numeral": "VI",
+  "note": "Closed, matte, low-frequency \u2014 a clean result.",
+  "source": "sources/drum.jpg",
+  "licence": "Apache-2.0"
+ },
+ {
+  "file": "barrier.glb",
+  "name": "Road barrier",
+  "backend": "Pixal3D",
+  "faces": 4992,
+  "mb": 0.59,
+  "verdict": "good",
+  "numeral": "VII",
+  "note": "Chevrons survive; one leg is distorted.",
+  "source": "sources/barrier.jpg",
+  "licence": "Apache-2.0"
+ },
+ {
+  "file": "leica.glb",
+  "name": "Leica M3",
+  "backend": "Pixal3D",
+  "faces": 4972,
+  "mb": 0.84,
+  "verdict": "good",
+  "numeral": "VIII",
+  "note": "Chrome and a dark background still read; base-plate artefact.",
+  "source": "sources/leica.jpg",
+  "licence": "CC BY-SA 2.0 FR"
+ },
+ {
+  "file": "samurai.glb",
+  "name": "Samurai kabuto",
+  "backend": "Pixal3D",
+  "faces": 5000,
+  "mb": 0.83,
+  "verdict": "partial",
+  "numeral": "IX",
+  "note": "Side view loses the face mask; dome, crest and lacing survive.",
+  "source": "sources/samurai.jpg",
+  "licence": "CC BY-SA 4.0"
+ }
+]
