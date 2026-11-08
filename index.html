@@ -149,6 +149,26 @@
     .hint { margin:0; max-width:none; font-size:11px; }
     #fallback { width:auto; }
   }
+  #fallback[open] { width:min(620px,calc(100vw - 64px)); max-height:calc(100dvh - 64px); overflow-y:auto; padding:18px 22px; }
+  #fallback[open] summary { color:var(--ink); padding-bottom:14px; border-bottom:1px solid rgba(198,172,121,.18); }
+  #fallback[open] #fallback-list { max-height:none; overflow:visible; }
+  #how-made { margin:22px 0 28px; }
+  #how-made h2, #collection-title { font:400 28px/1.2 Georgia,serif; letter-spacing:-.02em; color:var(--ink); margin:8px 0 14px; }
+  #how-made .process-intro { font:15px/1.65 system-ui,sans-serif; color:#d0cbbf; }
+  .process-facts { display:flex; gap:8px; flex-wrap:wrap; margin:18px 0; }
+  .process-facts span { border:1px solid rgba(198,172,121,.22); padding:5px 8px; color:#d0c1a2; font-size:11px; }
+  .process-steps { list-style:none; padding:0; margin:20px 0; counter-reset:process; display:grid; grid-template-columns:1fr 1fr; gap:18px 22px; }
+  .process-steps li { counter-increment:process; border-top:1px solid rgba(198,172,121,.18); padding-top:12px; }
+  .process-steps li::before { content:'0' counter(process); color:var(--gold); font:10px/1.5 system-ui,sans-serif; letter-spacing:.12em; }
+  .process-steps h3 { font:400 19px/1.3 Georgia,serif; color:var(--ink); margin:5px 0 8px; }
+  .process-steps p { margin:0; color:#bfbbae; font:13px/1.7 system-ui,sans-serif; }
+  .process-limit { border-left:2px solid #8d7851; padding-left:14px; color:#c9c3b4; font-size:13px; line-height:1.7; }
+  #collection-title { padding-top:20px; border-top:1px solid rgba(198,172,121,.18); }
+  @media (max-width:760px) {
+    #fallback[open] { width:auto; max-height:none; padding:16px; overflow:visible; }
+    .process-steps { grid-template-columns:1fr; gap:18px; }
+    #how-made h2, #collection-title { font-size:25px; }
+  }
   [hidden] { display:none !important; }
   @media (prefers-reduced-motion: reduce) { #plaque { transition:none; } }
 </style>
@@ -190,8 +210,23 @@
 <div id="live" aria-live="polite"></div>
 
 <details id="fallback">
-  <summary>About the collection</summary>
-  <p>Each attempt starts with one image. Browse the results and their limitations here, with or without 3D.</p>
+  <summary>About &amp; how it was made</summary>
+  <section id="how-made" aria-labelledby="process-title">
+    <div class="kicker">THE PROCESS</div>
+    <h2 id="process-title">How I made these models</h2>
+    <p class="process-intro">I made this collection on an Apple Silicon Mac, using AssetFurnace to run Pixal3D locally. Each model started with a single still image.</p>
+    <div class="process-facts"><span>Local generation</span><span>One image per object</span><span>About 5,000 triangles per model</span></div>
+    <ol class="process-steps">
+      <li><h3>Start with an image</h3><p>Four exhibits began as photographs. For the bumper car, oil drum and road barrier, I generated reference images locally with FLUX.2 [klein] 4B.</p></li>
+      <li><h3>Separate the subject</h3><p>I removed the backgrounds to give the reconstruction a clearer silhouette and keep the surrounding scene out of the mesh.</p></li>
+      <li><h3>Generate the model</h3><p>Pixal3D turned the image into geometry and textures. The unseen sides were inferred from a single view, so this is where much of the invention—and the failure—happens.</p></li>
+      <li><h3>Prepare it for the web</h3><p>AssetFurnace’s Finish stage reduced the meshes to roughly 5,000 triangles, baked their textures and compressed the exports. The gallery uses meshopt-compressed GLBs, with 512-pixel overview textures and 1024-pixel textures for close-ups.</p></li>
+      <li><h3>Inspect the attempts</h3><p>I compared each result with its source image, recorded what survived, and adjusted the models’ orientation and placement for this three.js gallery. The reconstruction artifacts remain part of the exhibit.</p></li>
+    </ol>
+    <p class="process-limit">One image cannot reveal every surface. Thin structures, hollow interiors and lettering often break down. The verdicts beside each piece describe what worked and what was lost.</p>
+  </section>
+  <h2 id="collection-title">Explore the collection</h2>
+  <p>Source images, results and limitations, accessible with or without 3D.</p>
   <ol id="fallback-list">
     <li><a href="#/ecto" data-exhibit="ecto">Ecto-1</a><p>Weak: the front and roof rack melt.</p><a href="sources/ecto.jpg">Source image</a> · <a href="models/ecto.glb">3D model</a></li>
     <li><a href="#/gladiator" data-exhibit="gladiator">Roman secutor</a><p>Failed: the visor collapsed entirely.</p><a href="sources/gladiator.jpg">Source image</a> · <a href="models/gladiator.glb">3D model</a></li>
@@ -203,7 +238,7 @@
   </ol>
   <p class="fallback-links"><a href="credits.html">Photographer credits, source licences &amp; model licences</a></p>
 </details>
-<noscript><p>JavaScript is disabled. Open “About the collection” to browse source images, descriptions, and model downloads.</p></noscript>
+<noscript><p>JavaScript is disabled. Open “About &amp; how it was made” to browse source images, descriptions, and model downloads.</p></noscript>
 
 <script src="vendor/three.min.js"></script>
 <script src="vendor/GLTFLoader.js"></script>

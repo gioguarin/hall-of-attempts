@@ -17,6 +17,15 @@ exhibit identity; `#/4` still opens Roman secutor. Removed exhibits `#/1` and `#
 The public collection is numbered I–VII; number keys 1–7 match that visible order.
 Older numeric deep links retain their original exhibit identity; new links use the stable names.
 
+## How these models were made
+
+The gallery’s “About & how it was made” panel describes the workflow: single photographs or locally
+FLUX-generated references, background removal, local Pixal3D reconstruction through AssetFurnace on
+Apple Silicon, then retopology, texture baking and compression. Models retain roughly 5,000 triangles;
+the gallery supplies 512² overview and 1024² focus textures in meshopt-compressed GLBs. Inspection,
+orientation and contact-height adjustments prepare the exhibits without removing reconstruction artifacts.
+The account is based on the project log and saved generation/Finish provenance records.
+
 ## Assets and rights
 
 See [credits](credits.html), [asset attribution](LICENCES.md), and [machine-readable provenance](models/index.json).
